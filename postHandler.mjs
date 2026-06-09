@@ -1,5 +1,5 @@
 import { redactPemFromString } from './makexStandard.mjs';
-import { buildTweetUrl, createTweet, uploadMediaSimple } from './xApi.mjs';
+import { buildTweetUrl, createTweet, uploadMedia } from './xApi.mjs';
 
 function pickField(body, ...keys) {
   for (const key of keys) {
@@ -26,12 +26,15 @@ export async function handlePost(req, res) {
   }
 
   const mediaBuffer = req.file?.buffer;
+  const mediaFilename = req.file?.originalname || pickField(body, 'mediaFileName', 'media_file_name');
   const mediaIds = [];
+  let uploadDetails;
 
   try {
     if (mediaBuffer?.length) {
-      const mediaId = await uploadMediaSimple(accessToken, mediaBuffer, { mediaType });
-      mediaIds.push(mediaId);
+      const uploaded = await uploadMedia(accessToken, mediaBuffer, { mediaType, filename: mediaFilename });
+      mediaIds.push(uploaded.mediaId);
+      uploadDetails = uploaded.uploadDetails;
     }
 
     const xRes = await createTweet(accessToken, { text, replyToTweetId, mediaIds });
@@ -49,6 +52,7 @@ export async function handlePost(req, res) {
         mediaIds: mediaIds.length ? mediaIds : undefined,
         url: buildTweetUrl(xUsername, tweetId),
         createdAt: new Date().toISOString(),
+        uploadDetails,
       },
     });
   } catch (error) {

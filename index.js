@@ -83,7 +83,12 @@ app.post('/authorization', checkToken, (_req, res) => {
   }
 });
 
-app.post('/post', checkToken, (req, res, next) => {
+app.post('/post', (req, res, next) => {
+  const timeoutMs = 280000;
+  req.setTimeout(timeoutMs);
+  res.setTimeout(timeoutMs);
+  next();
+}, checkToken, (req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
     return upload.single('media')(req, res, (err) => {
