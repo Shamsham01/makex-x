@@ -42,6 +42,8 @@ function generatePkcePair() {
   return { codeVerifier, codeChallenge };
 }
 
+const OAUTH2_REDIRECT_URI = 'https://www.make.com/oauth/cb/oauth2';
+
 app.post('/authorization', checkToken, (_req, res) => {
   try {
     const { codeVerifier, codeChallenge } = generatePkcePair();
@@ -54,6 +56,61 @@ app.post('/authorization', checkToken, (_req, res) => {
         codeChallenge,
       },
     });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: redactPemFromString(error.message) || 'Internal server error',
+      data: { timestamp: new Date().toISOString() },
+    });
+  }
+});
+
+app.post('/oauth/token', checkToken, async (req, res) => {
+  try {
+    const {
+      code,
+      codeVerifier,
+      clientId,
+      clientSecret,
+      redirectUri = OAUTH2_REDIRECT_URI,
+    } = req.body || {};
+
+    if (!code || !codeVerifier || !clientId || !clientSecret) {
+      return res.status(400).json({
+        status: 'error',
+        code: 'INVALID_REQUEST',
+        message: 'Missing code, codeVerifier, clientId, or clientSecret',
+      });
+    }
+
+    const params = new URLSearchParams({
+      code,
+      grant_type: 'authorization_code',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      code_verifier: codeVerifier,
+    });
+
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const xRes = await fetch('https://api.x.com/2/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${basic}`,
+      },
+      body: params.toString(),
+    });
+
+    const payload = await xRes.json();
+    if (!xRes.ok) {
+      return res.status(xRes.status).json({
+        status: 'error',
+        error: payload.error || 'TOKEN_EXCHANGE_FAILED',
+        error_description: payload.error_description || payload.error || 'X token exchange failed',
+      });
+    }
+
+    return res.status(200).json(payload);
   } catch (error) {
     return res.status(500).json({
       status: 'error',

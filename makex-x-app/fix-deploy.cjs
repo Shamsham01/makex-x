@@ -73,21 +73,27 @@ const comm = {
       code_challenge: '{{temp.code_challenge}}',
       code_challenge_method: 'S256',
     },
-    response: { temp: { code: '{{query.code}}' } },
+    response: {
+      temp: {
+        code: '{{query.code}}',
+        code_verifier: '{{temp.code_verifier}}',
+        code_challenge: '{{temp.code_challenge}}',
+      },
+    },
   },
   token: {
-    url: 'https://api.x.com/2/oauth2/token',
+    url: BASE_URL + '/oauth/token',
     method: 'POST',
-    type: 'urlencoded',
     headers: {
-      Authorization: "{{Basic {{base64(ifempty(parameters.clientId, common.clientId) + ':' + ifempty(parameters.clientSecret, common.clientSecret))}}}}".replace('{{', '').replace('}}', ''),
+      Authorization: '{{common.apiKey}}',
+      'Content-Type': 'application/json',
     },
     body: {
       code: '{{temp.code}}',
-      grant_type: 'authorization_code',
-      client_id: '{{ifempty(parameters.clientId, common.clientId)}}',
-      redirect_uri: 'https://www.make.com/oauth/cb/oauth2',
-      code_verifier: '{{temp.code_verifier}}',
+      codeVerifier: '{{temp.code_verifier}}',
+      clientId: '{{ifempty(parameters.clientId, common.clientId)}}',
+      clientSecret: '{{ifempty(parameters.clientSecret, common.clientSecret)}}',
+      redirectUri: 'https://www.make.com/oauth/cb/oauth2',
     },
     response: {
       data: {
@@ -98,6 +104,9 @@ const comm = {
         tokenType: '{{body.token_type}}',
       },
       expires: '{{addYears(now, 1)}}',
+      error: {
+        message: '[{{ifempty(body.error; statusCode)}}] {{ifempty(body.error_description; body.message)}}',
+      },
     },
     log: {
       sanitize: [
@@ -109,7 +118,7 @@ const comm = {
     },
   },
   refresh: {
-    condition: '{{data.expires < addMinutes(now, 15)}}',
+    condition: '{{if(data.expires, data.expires < addMinutes(now, 15), false)}}',
     url: 'https://api.x.com/2/oauth2/token',
     method: 'POST',
     type: 'urlencoded',
@@ -139,9 +148,13 @@ const comm = {
   },
   info: {
     url: 'https://api.x.com/2/users/me',
-    headers: { Authorization: 'Bearer {{data.accessToken}}' },
+    method: 'GET',
+    headers: { Authorization: 'Bearer {{connection.accessToken}}' },
     qs: { 'user.fields': 'id,name,username,profile_image_url' },
     response: {
+      error: {
+        message: '[{{statusCode}}] {{ifempty(body.detail; body.title; body.error)}}',
+      },
       metadata: { type: 'text', value: '@{{body.data.username}} ({{body.data.name}})' },
       uid: '{{body.data.id}}',
       data: {
@@ -154,9 +167,6 @@ const comm = {
     log: { sanitize: ['request.headers.authorization'] },
   },
 };
-
-// Fix token header - I made a mistake above with replace trick
-comm.token.headers.Authorization = 'Basic {{base64(ifempty(parameters.clientId, common.clientId) + \':\' + ifempty(parameters.clientSecret, common.clientSecret))}}';
 
 writeFileSync('base.json', JSON.stringify(base, null, 2) + '\n', 'utf8');
 writeFileSync('connection/communication.json', JSON.stringify(comm, null, 2) + '\n', 'utf8');
