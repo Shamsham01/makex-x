@@ -8,3 +8,4 @@ warps-*.json
 
 # Local Make common data with real secrets (use common.example.json as template)
 makex-x-app/common.json
+makex-x-app/connection/common.json

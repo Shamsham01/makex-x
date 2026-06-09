@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import express from 'express';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
@@ -35,9 +36,24 @@ app.get('/health', (_req, res) => {
   });
 });
 
+function generatePkcePair() {
+  const codeVerifier = crypto.randomBytes(32).toString('base64url');
+  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  return { codeVerifier, codeChallenge };
+}
+
 app.post('/authorization', checkToken, (_req, res) => {
   try {
-    return res.status(200).json(buildAuthorizationSuccessResponse());
+    const { codeVerifier, codeChallenge } = generatePkcePair();
+    const response = buildAuthorizationSuccessResponse();
+    return res.status(200).json({
+      ...response,
+      data: {
+        ...response.data,
+        codeVerifier,
+        codeChallenge,
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       status: 'error',

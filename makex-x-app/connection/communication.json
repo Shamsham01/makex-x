@@ -1,6 +1,6 @@
 {
   "preauthorize": {
-    "url": "{{common.apiBaseUrl}}/authorization",
+    "url": "https://makex-x.onrender.com/authorization",
     "method": "POST",
     "headers": {
       "Authorization": "{{common.apiKey}}",
@@ -10,6 +10,10 @@
       "walletPem": "{{parameters.pemContent}}"
     },
     "response": {
+      "temp": {
+        "code_verifier": "{{body.data.codeVerifier}}",
+        "code_challenge": "{{body.data.codeChallenge}}"
+      },
       "error": {
         "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}"
       }
@@ -22,16 +26,13 @@
     }
   },
   "authorize": {
-    "temp": {
-      "code_verifier": "{{uuid}}"
-    },
     "url": "https://x.com/i/oauth2/authorize",
     "qs": {
       "response_type": "code",
       "client_id": "{{ifempty(parameters.clientId, common.clientId)}}",
-      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "redirect_uri": "https://www.make.com/oauth/cb/oauth2",
       "scope": "{{join(distinct(merge(oauth.scope, ifempty(parameters.additionalScopes, emptyarray))), ' ')}}",
-      "code_challenge": "{{base64url(sha256(temp.code_verifier, 'base64'))}}",
+      "code_challenge": "{{temp.code_challenge}}",
       "code_challenge_method": "S256"
     },
     "response": {
@@ -51,7 +52,7 @@
       "code": "{{temp.code}}",
       "grant_type": "authorization_code",
       "client_id": "{{ifempty(parameters.clientId, common.clientId)}}",
-      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "redirect_uri": "https://www.make.com/oauth/cb/oauth2",
       "code_verifier": "{{temp.code_verifier}}"
     },
     "response": {

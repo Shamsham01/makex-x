@@ -68,7 +68,7 @@ See **[CREDENTIALS.md](../CREDENTIALS.md)** in the repo root.
 
 1. **Make CLI** authenticated (`make-cli login`)
 2. **X Developer App** with OAuth 2.0 enabled
-   - Callback URL: `https://www.make.com/oauth/cb/app`
+   - Callback URL: `https://www.make.com/oauth/cb/oauth2` (X blocks `/oauth/cb/app` for indie dev apps)
    - Type: Web App / Confidential client
 3. **MakeX-X backend** deployed at `https://makex-x.onrender.com` with `SECURE_TOKEN` set
 4. **MultiversX automation wallet** PEM for usage fees (REWARD + EGLD), same as other MakeX apps

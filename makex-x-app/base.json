@@ -1,13 +1,13 @@
 {
-  "baseUrl": "{{common.apiBaseUrl}}",
-  "timeout": "{{common.timeout}}",
+  "baseUrl": "https://makex-x.onrender.com",
+  "timeout": 300000,
   "headers": {
     "Authorization": "{{common.apiKey}}",
     "Content-Type": "application/json"
   },
   "response": {
     "error": {
-      "message": "[{{ifempty(body.code; statusCode)}}] {{ifempty(body.message; body.error)}}"
+      "message": "[{{ifempty(body.code; statusCode)}}] {{ifempty(body.message; body.error)}}]"
     }
   },
   "log": {

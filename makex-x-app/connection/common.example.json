@@ -1,0 +1,5 @@
+{
+  "apiKey": "Bearer YOUR_SECURE_TOKEN",
+  "clientId": "YOUR_X_CLIENT_ID",
+  "clientSecret": "YOUR_X_CLIENT_SECRET"
+}
