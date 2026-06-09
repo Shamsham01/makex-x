@@ -2,12 +2,14 @@ import crypto from 'node:crypto';
 import express from 'express';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
+import multer from 'multer';
 import dotenv from 'dotenv';
 import {
   buildAuthorizationSuccessResponse,
   buildUnauthorizedResponse,
   redactPemFromString,
 } from './makexStandard.mjs';
+import { handlePost } from './postHandler.mjs';
 
 dotenv.config();
 
@@ -21,6 +23,22 @@ if (!SECURE_TOKEN) {
 
 app.use(helmet());
 app.use(bodyParser.json({ limit: '50mb' }));
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 512 * 1024 * 1024 },
+});
+
+app.use((req, _res, next) => {
+  console.log(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+    }),
+  );
+  next();
+});
 
 const checkToken = (req, res, next) => {
   if (req.headers.authorization === `Bearer ${SECURE_TOKEN}`) return next();
@@ -63,6 +81,24 @@ app.post('/authorization', checkToken, (_req, res) => {
       data: { timestamp: new Date().toISOString() },
     });
   }
+});
+
+app.post('/post', checkToken, (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    return upload.single('media')(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          status: 'error',
+          code: 'INVALID_REQUEST',
+          message: err.message || 'Invalid multipart upload',
+          data: { timestamp: new Date().toISOString() },
+        });
+      }
+      return handlePost(req, res);
+    });
+  }
+  return handlePost(req, res);
 });
 
 app.post('/oauth/token', checkToken, async (req, res) => {

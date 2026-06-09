@@ -4,37 +4,23 @@
     "type": "pkey",
     "label": "PEM Content",
     "required": true,
-    "help": "Paste your MultiversX PEM private key for MakeX usage fees. Derive PEM safely using the [MakeX PEM Generator](https://makex-web3.com/pem-generator/). Use a dedicated automation wallet — never connect personal wallets."
+    "help": "MultiversX wallet PEM for MakeX authorization (WARPS hybrid)."
   },
   {
     "name": "clientId",
     "type": "text",
     "label": "X Client ID",
-    "advanced": true,
+    "required": false,
     "editable": true,
-    "help": "Optional override. Defaults to the app developer Client ID from X Developer Portal."
+    "help": "X OAuth 2.0 Client ID. Leave empty to use connection common clientId."
   },
   {
     "name": "clientSecret",
     "type": "password",
     "label": "X Client Secret",
-    "advanced": true,
+    "required": false,
     "editable": true,
-    "help": "Optional override. Defaults to the app developer Client Secret."
-  },
-  {
-    "name": "additionalScopes",
-    "type": "array",
-    "label": "Additional Scopes",
-    "labels": {
-      "add": "Add scope"
-    },
-    "spec": {
-      "type": "text",
-      "label": "Scope"
-    },
     "advanced": true,
-    "editable": true,
-    "help": "Extra X API scopes beyond the defaults (tweet.read, tweet.write, users.read, offline.access, media.write)."
+    "help": "Optional override. Defaults to connection common clientSecret."
   }
 ]
