@@ -1,9 +1,9 @@
 const X_TWEETS_URL = 'https://api.x.com/2/tweets';
-const X_MEDIA_UPLOAD_URL = 'https://upload.twitter.com/1.1/media/upload.json';
-const CHUNK_SIZE = 5 * 1024 * 1024;
+const X_MEDIA_API = 'https://api.x.com/2/media/upload';
+const CHUNK_SIZE = 4 * 1024 * 1024;
 const SIMPLE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 
-function xApiError(body, status, fallback) {
+function xApiError(body, status, fallback, uploadStage = null) {
   const message =
     body?.detail ||
     body?.title ||
@@ -15,6 +15,7 @@ function xApiError(body, status, fallback) {
   err.status = status;
   err.code = 'X_API_ERROR';
   err.xBody = body;
+  if (uploadStage) err.uploadStage = uploadStage;
   return err;
 }
 
@@ -49,56 +50,59 @@ function resolveMediaMeta(mediaType = 'image', filename = '') {
   return { mime: 'image/jpeg', category: 'tweet_image', chunked: false };
 }
 
-async function mediaUploadRequest(accessToken, { method = 'POST', query, form, body }) {
-  const url = new URL(X_MEDIA_UPLOAD_URL);
+async function xMediaRequest(accessToken, url, { method = 'POST', query, json, form } = {}, uploadStage) {
+  const target = new URL(url);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
-      url.searchParams.set(key, String(value));
+      target.searchParams.set(key, String(value));
     }
   }
 
   const headers = { Authorization: `Bearer ${accessToken}` };
-  let payload = body;
+  let body;
 
-  if (form) {
-    payload = form;
-  } else if (body) {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+  if (json != null) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(json);
+  } else if (form) {
+    body = form;
   }
 
-  const res = await fetch(url, { method, headers, body: payload });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw xApiError(json, res.status, 'X media upload failed');
-  }
-  return json;
-}
-
-async function uploadMediaSimple(accessToken, buffer, meta) {
-  const form = new FormData();
-  form.append('media', new Blob([buffer], { type: meta.mime }), 'media');
-  if (meta.category) {
-    form.append('media_category', meta.category);
+  const res = await fetch(target, { method, headers, body });
+  const raw = await res.text();
+  let parsed = {};
+  if (raw) {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { raw };
+    }
   }
 
-  const body = await mediaUploadRequest(accessToken, { form });
-  const mediaId = body.media_id_string || body.media_id;
-  if (!mediaId) {
-    throw xApiError(body, 502, 'X media upload returned no media id');
+  if (!res.ok || parsed.errors?.length) {
+    throw xApiError(
+      parsed,
+      res.status,
+      parsed.errors?.[0]?.message || parsed.raw || `X media upload failed (${uploadStage || method})`,
+      uploadStage,
+    );
   }
-  return { mediaId: String(mediaId), uploadDetails: { method: 'simple', bytes: buffer.length } };
+
+  return parsed;
 }
 
 async function waitForMediaProcessing(accessToken, mediaId) {
-  const maxAttempts = 60;
+  const maxAttempts = 90;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const body = await mediaUploadRequest(accessToken, {
-      method: 'GET',
-      query: { command: 'STATUS', media_id: mediaId },
-    });
+    const body = await xMediaRequest(
+      accessToken,
+      X_MEDIA_API,
+      { method: 'GET', query: { command: 'STATUS', media_id: mediaId } },
+      'STATUS',
+    );
 
-    const info = body.processing_info;
+    const info = body.data?.processing_info || body.processing_info;
     if (!info) {
       return body;
     }
@@ -112,6 +116,7 @@ async function waitForMediaProcessing(accessToken, mediaId) {
         { errors: [{ message: info.error?.message || 'Video processing failed on X' }] },
         502,
         'X video processing failed',
+        'STATUS',
       );
     }
 
@@ -119,77 +124,87 @@ async function waitForMediaProcessing(accessToken, mediaId) {
     await sleep(waitMs);
   }
 
-  throw xApiError({}, 504, 'Timed out waiting for X video processing');
+  throw xApiError({}, 504, 'Timed out waiting for X video processing', 'STATUS');
 }
 
-async function uploadMediaChunked(accessToken, buffer, meta) {
-  const initBody = await mediaUploadRequest(accessToken, {
-    body: new URLSearchParams({
-      command: 'INIT',
-      total_bytes: String(buffer.length),
-      media_type: meta.mime,
-      media_category: meta.category,
-    }).toString(),
-  });
+async function uploadMediaChunkedV2(accessToken, buffer, meta) {
+  const initBody = await xMediaRequest(
+    accessToken,
+    `${X_MEDIA_API}/initialize`,
+    {
+      method: 'POST',
+      json: {
+        media_type: meta.mime,
+        total_bytes: buffer.length,
+        media_category: meta.category,
+      },
+    },
+    'INIT',
+  );
 
-  const mediaId = initBody.media_id_string || initBody.media_id;
+  const mediaId = initBody.data?.id || initBody.media_id_string || initBody.media_id;
   if (!mediaId) {
-    throw xApiError(initBody, 502, 'X media INIT returned no media id');
+    throw xApiError(initBody, 502, 'X media INIT returned no media id', 'INIT');
   }
 
   let segmentIndex = 0;
   for (let offset = 0; offset < buffer.length; offset += CHUNK_SIZE) {
     const chunk = buffer.subarray(offset, offset + CHUNK_SIZE);
     const form = new FormData();
-    form.append('command', 'APPEND');
-    form.append('media_id', String(mediaId));
     form.append('segment_index', String(segmentIndex));
-    form.append('media', new Blob([chunk], { type: meta.mime }), `segment-${segmentIndex}`);
+    form.append('media', new Blob([chunk], { type: 'application/octet-stream' }), `chunk-${segmentIndex}`);
 
-    await mediaUploadRequest(accessToken, { form });
+    await xMediaRequest(
+      accessToken,
+      `${X_MEDIA_API}/${mediaId}/append`,
+      { method: 'POST', form },
+      `APPEND_${segmentIndex}`,
+    );
     segmentIndex += 1;
   }
 
-  await mediaUploadRequest(accessToken, {
-    body: new URLSearchParams({
-      command: 'FINALIZE',
-      media_id: String(mediaId),
-    }).toString(),
-  });
+  const finalizeBody = await xMediaRequest(
+    accessToken,
+    `${X_MEDIA_API}/${mediaId}/finalize`,
+    { method: 'POST' },
+    'FINALIZE',
+  );
 
-  const status = await waitForMediaProcessing(accessToken, mediaId);
+  const processingInfo = finalizeBody.data?.processing_info || finalizeBody.processing_info;
+  if (processingInfo && processingInfo.state !== 'succeeded') {
+    await waitForMediaProcessing(accessToken, mediaId);
+  }
 
   return {
     mediaId: String(mediaId),
     uploadDetails: {
-      method: 'chunked',
+      method: 'v2_chunked',
       bytes: buffer.length,
       segments: segmentIndex,
-      processingState: status.processing_info?.state || 'succeeded',
+      mime: meta.mime,
+      category: meta.category,
+      processingState: processingInfo?.state || 'succeeded',
     },
   };
 }
 
 export async function uploadMedia(accessToken, buffer, { mediaType = 'image', filename = '' } = {}) {
   if (!buffer?.length) {
-    throw xApiError({}, 400, 'Media buffer is empty');
+    throw xApiError({}, 400, 'Media buffer is empty', 'VALIDATE');
   }
 
-  const meta = resolveMediaMeta(mediaType, filename);
+  const safeFilename =
+    filename ||
+    (String(mediaType).toLowerCase() === 'video' ? 'upload.mp4' : 'upload.jpg');
+  const meta = resolveMediaMeta(mediaType, safeFilename);
   const useChunked = meta.chunked || buffer.length > SIMPLE_UPLOAD_MAX_BYTES;
 
-  if (useChunked) {
-    return uploadMediaChunked(accessToken, buffer, meta);
+  if (useChunked || meta.category === 'tweet_video') {
+    return uploadMediaChunkedV2(accessToken, buffer, meta);
   }
 
-  try {
-    return await uploadMediaSimple(accessToken, buffer, meta);
-  } catch (error) {
-    if (error.status === 413 || /too large|chunk/i.test(String(error.message))) {
-      return uploadMediaChunked(accessToken, buffer, meta);
-    }
-    throw error;
-  }
+  // Small images/GIFs: v2 chunked flow with a single segment is reliable with OAuth 2.0.
+  return uploadMediaChunkedV2(accessToken, buffer, meta);
 }
 
 export async function createTweet(accessToken, { text, replyToTweetId, mediaIds = [] } = {}) {
@@ -222,7 +237,7 @@ export async function createTweet(accessToken, { text, replyToTweetId, mediaIds 
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw xApiError(body, res.status, 'X tweet creation failed');
+    throw xApiError(body, res.status, 'X tweet creation failed', 'TWEET');
   }
   return body;
 }

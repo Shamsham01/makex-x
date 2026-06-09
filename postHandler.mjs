@@ -30,7 +30,26 @@ export async function handlePost(req, res) {
   const mediaIds = [];
   let uploadDetails;
 
+  console.log(
+    JSON.stringify({
+      event: 'post_media_received',
+      bytes: mediaBuffer?.length || 0,
+      filename: mediaFilename || null,
+      mediaType,
+      hasFile: Boolean(req.file),
+    }),
+  );
+
   try {
+    if (mediaType === 'video' && !mediaBuffer?.length) {
+      return res.status(400).json({
+        status: 'error',
+        code: 'INVALID_REQUEST',
+        message: 'Video post requires media file data in the multipart upload',
+        data: { timestamp: new Date().toISOString() },
+      });
+    }
+
     if (mediaBuffer?.length) {
       const uploaded = await uploadMedia(accessToken, mediaBuffer, { mediaType, filename: mediaFilename });
       mediaIds.push(uploaded.mediaId);
@@ -60,9 +79,15 @@ export async function handlePost(req, res) {
     return res.status(status >= 400 && status < 600 ? status : 502).json({
       status: 'error',
       code: error.code || 'POST_FAILED',
-      message: redactPemFromString(error.message) || 'Failed to create post',
+      message:
+        `${redactPemFromString(error.message) || 'Failed to create post'}` +
+        `${error.uploadStage ? ` (stage: ${error.uploadStage})` : ''}`,
       data: {
         timestamp: new Date().toISOString(),
+        uploadStage: error.uploadStage || null,
+        bytes: mediaBuffer?.length || 0,
+        filename: mediaFilename || null,
+        mediaType,
         ...(error.xBody ? { xError: error.xBody } : {}),
       },
     });
