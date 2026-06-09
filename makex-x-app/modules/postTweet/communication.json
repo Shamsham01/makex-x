@@ -1,0 +1,96 @@
+[
+  {
+    "url": "/post",
+    "method": "POST",
+    "type": "multipart/form-data",
+    "condition": "{{length(parameters.media_data) > 0}}",
+    "body": {
+      "text": "{{parameters.text}}",
+      "mediaType": "{{ifempty(parameters.mediaType; 'image')}}",
+      "replyToTweetId": "{{parameters.replyToTweetId}}",
+      "walletPem": "{{connection.pemContent}}",
+      "accessToken": "{{connection.accessToken}}",
+      "refreshToken": "{{connection.refreshToken}}",
+      "xUserId": "{{connection.userId}}",
+      "xUsername": "{{connection.username}}",
+      "media": {
+        "value": "{{parameters.media_data}}",
+        "options": {
+          "filename": "{{parameters.media_file_name}}"
+        }
+      }
+    },
+    "response": {
+      "valid": {
+        "condition": "{{body.status = 'success'}}"
+      },
+      "error": {
+        "type": "DataError",
+        "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+        "detail": {
+          "code": "{{body.code}}",
+          "insufficientReward": "{{body.data.insufficientReward}}",
+          "troubleshooting": "{{body.data.troubleshooting}}",
+          "usageFeeHash": "{{body.data.usageFeeHash}}"
+        }
+      },
+      "output": {
+        "status": "{{body.status}}",
+        "code": "{{body.code}}",
+        "message": "{{body.message}}",
+        "data": {
+          "tweetId": "{{body.data.tweetId}}",
+          "text": "{{body.data.text}}",
+          "mediaIds": "{{body.data.mediaIds}}",
+          "mediaKeys": "{{body.data.mediaKeys}}",
+          "url": "{{body.data.url}}",
+          "createdAt": "{{body.data.createdAt}}",
+          "usageFeeHash": "{{body.data.usageFeeHash}}",
+          "uploadDetails": "{{body.data.uploadDetails}}"
+        }
+      }
+    }
+  },
+  {
+    "url": "/post",
+    "method": "POST",
+    "condition": "{{length(ifempty(parameters.media_data; emptystring)) = 0}}",
+    "body": {
+      "text": "{{parameters.text}}",
+      "mediaType": "{{parameters.mediaType}}",
+      "replyToTweetId": "{{parameters.replyToTweetId}}",
+      "walletPem": "{{connection.pemContent}}",
+      "accessToken": "{{connection.accessToken}}",
+      "refreshToken": "{{connection.refreshToken}}",
+      "xUserId": "{{connection.userId}}",
+      "xUsername": "{{connection.username}}"
+    },
+    "response": {
+      "valid": {
+        "condition": "{{body.status = 'success'}}"
+      },
+      "error": {
+        "type": "DataError",
+        "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+        "detail": {
+          "code": "{{body.code}}",
+          "insufficientReward": "{{body.data.insufficientReward}}",
+          "troubleshooting": "{{body.data.troubleshooting}}",
+          "usageFeeHash": "{{body.data.usageFeeHash}}"
+        }
+      },
+      "output": {
+        "status": "{{body.status}}",
+        "code": "{{body.code}}",
+        "message": "{{body.message}}",
+        "data": {
+          "tweetId": "{{body.data.tweetId}}",
+          "text": "{{body.data.text}}",
+          "url": "{{body.data.url}}",
+          "createdAt": "{{body.data.createdAt}}",
+          "usageFeeHash": "{{body.data.usageFeeHash}}"
+        }
+      }
+    }
+  }
+]

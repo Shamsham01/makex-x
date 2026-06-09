@@ -1,0 +1,7 @@
+{
+  "apiKey": "Bearer YOUR_SECURE_TOKEN",
+  "apiBaseUrl": "https://makex-x.onrender.com",
+  "clientId": "YOUR_X_CLIENT_ID",
+  "clientSecret": "YOUR_X_CLIENT_SECRET",
+  "timeout": 300000
+}

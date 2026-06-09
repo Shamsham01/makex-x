@@ -1,0 +1,23 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID",
+    "required": true,
+    "help": "The X post (tweet) ID to retrieve."
+  },
+  {
+    "name": "tweetFields",
+    "type": "array",
+    "label": "Extra Post Fields",
+    "required": false,
+    "labels": {
+      "add": "Add field"
+    },
+    "spec": {
+      "type": "text",
+      "label": "Field"
+    },
+    "help": "Optional X API tweet.fields expansions (e.g. created_at, public_metrics, attachments)."
+  }
+]

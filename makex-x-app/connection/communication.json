@@ -1,0 +1,132 @@
+{
+  "preauthorize": {
+    "url": "{{common.apiBaseUrl}}/authorization",
+    "method": "POST",
+    "headers": {
+      "Authorization": "{{common.apiKey}}",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "walletPem": "{{parameters.pemContent}}"
+    },
+    "response": {
+      "error": {
+        "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}"
+      }
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization",
+        "request.body.walletPem"
+      ]
+    }
+  },
+  "authorize": {
+    "temp": {
+      "code_verifier": "{{uuid}}"
+    },
+    "url": "https://x.com/i/oauth2/authorize",
+    "qs": {
+      "response_type": "code",
+      "client_id": "{{ifempty(parameters.clientId, common.clientId)}}",
+      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "scope": "{{join(distinct(merge(oauth.scope, ifempty(parameters.additionalScopes, emptyarray))), ' ')}}",
+      "code_challenge": "{{base64url(sha256(temp.code_verifier, 'base64'))}}",
+      "code_challenge_method": "S256"
+    },
+    "response": {
+      "temp": {
+        "code": "{{query.code}}"
+      }
+    }
+  },
+  "token": {
+    "url": "https://api.x.com/2/oauth2/token",
+    "method": "POST",
+    "type": "urlencoded",
+    "headers": {
+      "Authorization": "Basic {{base64(ifempty(parameters.clientId, common.clientId) + ':' + ifempty(parameters.clientSecret, common.clientSecret))}}"
+    },
+    "body": {
+      "code": "{{temp.code}}",
+      "grant_type": "authorization_code",
+      "client_id": "{{ifempty(parameters.clientId, common.clientId)}}",
+      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "code_verifier": "{{temp.code_verifier}}"
+    },
+    "response": {
+      "data": {
+        "expires": "{{addSeconds(now, body.expires_in)}}",
+        "accessToken": "{{body.access_token}}",
+        "refreshToken": "{{body.refresh_token}}",
+        "scope": "{{body.scope}}",
+        "tokenType": "{{body.token_type}}"
+      },
+      "expires": "{{addYears(now, 1)}}"
+    },
+    "log": {
+      "sanitize": [
+        "request.body.code",
+        "request.headers.authorization",
+        "response.body.access_token",
+        "response.body.refresh_token"
+      ]
+    }
+  },
+  "refresh": {
+    "condition": "{{data.expires < addMinutes(now, 15)}}",
+    "url": "https://api.x.com/2/oauth2/token",
+    "method": "POST",
+    "type": "urlencoded",
+    "headers": {
+      "Authorization": "Basic {{base64(ifempty(parameters.clientId, common.clientId) + ':' + ifempty(parameters.clientSecret, common.clientSecret))}}"
+    },
+    "body": {
+      "grant_type": "refresh_token",
+      "refresh_token": "{{data.refreshToken}}",
+      "client_id": "{{ifempty(parameters.clientId, common.clientId)}}"
+    },
+    "response": {
+      "data": {
+        "expires": "{{addSeconds(now, body.expires_in)}}",
+        "accessToken": "{{body.access_token}}",
+        "refreshToken": "{{ifempty(body.refresh_token; data.refreshToken)}}"
+      }
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization",
+        "request.body.refresh_token",
+        "response.body.access_token",
+        "response.body.refresh_token"
+      ]
+    }
+  },
+  "info": {
+    "url": "https://api.x.com/2/users/me",
+    "headers": {
+      "Authorization": "Bearer {{data.accessToken}}"
+    },
+    "qs": {
+      "user.fields": "id,name,username,profile_image_url"
+    },
+    "response": {
+      "metadata": {
+        "type": "text",
+        "value": "@{{body.data.username}} ({{body.data.name}})"
+      },
+      "uid": "{{body.data.id}}",
+      "data": {
+        "userId": "{{body.data.id}}",
+        "username": "{{body.data.username}}",
+        "name": "{{body.data.name}}",
+        "profileImageUrl": "{{body.data.profile_image_url}}"
+      }
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization"
+      ]
+    }
+  }
+}

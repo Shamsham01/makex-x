@@ -1,0 +1,9 @@
+[
+  { "name": "tweetId", "type": "text", "label": "Post ID" },
+  { "name": "retweetCount", "type": "uinteger", "label": "Reposts" },
+  { "name": "replyCount", "type": "uinteger", "label": "Replies" },
+  { "name": "likeCount", "type": "uinteger", "label": "Likes" },
+  { "name": "quoteCount", "type": "uinteger", "label": "Quotes" },
+  { "name": "bookmarkCount", "type": "uinteger", "label": "Bookmarks" },
+  { "name": "impressionCount", "type": "uinteger", "label": "Impressions" }
+]

@@ -1,0 +1,7 @@
+[
+  "tweet.read",
+  "tweet.write",
+  "users.read",
+  "offline.access",
+  "media.write"
+]

@@ -1,0 +1,12 @@
+﻿{
+  "name": "makex-x-kj31eh",
+  "label": "MakeX-X",
+  "description": "X (Twitter) API wrapper for Make.com",
+  "version": 1,
+  "versionFull": "1.0.0",
+  "theme": "#000000",
+  "beta": false,
+  "public": false,
+  "language": "en",
+  "audience": "global"
+}

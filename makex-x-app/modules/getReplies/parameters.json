@@ -1,0 +1,24 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID",
+    "required": true,
+    "help": "Parent post ID whose replies (conversation) you want to fetch."
+  },
+  {
+    "name": "maxResults",
+    "type": "uinteger",
+    "label": "Max Results",
+    "required": false,
+    "default": 10,
+    "help": "Maximum replies to return (1–100)."
+  },
+  {
+    "name": "paginationToken",
+    "type": "text",
+    "label": "Pagination Token",
+    "required": false,
+    "help": "next_token from a previous run to fetch the next page."
+  }
+]

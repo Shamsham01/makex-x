@@ -1,0 +1,41 @@
+{
+  "url": "/posts/get",
+  "method": "POST",
+  "body": {
+    "tweetId": "{{parameters.tweetId}}",
+    "tweetFields": "{{parameters.tweetFields}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "tweetId": "{{body.data.tweet.id}}",
+        "text": "{{body.data.tweet.text}}",
+        "authorId": "{{body.data.tweet.author_id}}",
+        "createdAt": "{{body.data.tweet.created_at}}",
+        "lang": "{{body.data.tweet.lang}}",
+        "publicMetrics": "{{body.data.tweet.public_metrics}}",
+        "attachments": "{{body.data.tweet.attachments}}",
+        "url": "{{body.data.url}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

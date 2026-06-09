@@ -1,0 +1,36 @@
+[
+  {
+    "name": "searchType",
+    "type": "select",
+    "label": "Search Type",
+    "required": true,
+    "default": "hashtag",
+    "options": [
+      { "label": "Hashtag", "value": "hashtag" },
+      { "label": "Username / From User", "value": "username" },
+      { "label": "Keyword", "value": "keyword" }
+    ]
+  },
+  {
+    "name": "query",
+    "type": "text",
+    "label": "Query",
+    "required": true,
+    "help": "Hashtag (with or without #), @username, or free-text keyword depending on Search Type."
+  },
+  {
+    "name": "maxResults",
+    "type": "uinteger",
+    "label": "Max Results",
+    "required": false,
+    "default": 10,
+    "help": "Maximum posts to return (1–100)."
+  },
+  {
+    "name": "paginationToken",
+    "type": "text",
+    "label": "Pagination Token",
+    "required": false,
+    "help": "next_token from a previous search for pagination."
+  }
+]

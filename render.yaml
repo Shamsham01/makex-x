@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: makex-x
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: CURRENT_URL
+        value: https://makex-x.onrender.com
+      - key: SECURE_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    autoDeploy: true
+    region: frankfurt

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "text",
+    "type": "text",
+    "label": "Post Text",
+    "required": false,
+    "multiline": true,
+    "help": "Tweet text (up to 280 characters for standard posts). Required unless posting media-only."
+  },
+  {
+    "name": "media_file_name",
+    "type": "text",
+    "label": "Media File Name",
+    "required": false,
+    "semantic": "file:name",
+    "help": "Filename with extension (e.g. photo.jpg, clip.mp4, animation.gif)."
+  },
+  {
+    "name": "media_data",
+    "type": "buffer",
+    "label": "Media Data",
+    "required": false,
+    "semantic": "file:data",
+    "help": "Image, GIF, or video file. Backend handles chunked upload for large videos."
+  },
+  {
+    "name": "mediaType",
+    "type": "select",
+    "label": "Media Type",
+    "required": false,
+    "default": "image",
+    "options": [
+      { "label": "Image (JPEG/PNG/WEBP)", "value": "image" },
+      { "label": "GIF", "value": "gif" },
+      { "label": "Video (MP4)", "value": "video" }
+    ],
+    "help": "Hint for the upload pipeline when attaching media."
+  },
+  {
+    "name": "replyToTweetId",
+    "type": "text",
+    "label": "Reply To Post ID",
+    "required": false,
+    "help": "Optional post ID to reply to."
+  }
+]

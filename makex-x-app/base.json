@@ -1,0 +1,21 @@
+{
+  "baseUrl": "{{common.apiBaseUrl}}",
+  "timeout": "{{common.timeout}}",
+  "headers": {
+    "Authorization": "{{common.apiKey}}",
+    "Content-Type": "application/json"
+  },
+  "response": {
+    "error": {
+      "message": "[{{ifempty(body.code; statusCode)}}] {{ifempty(body.message; body.error)}}"
+    }
+  },
+  "log": {
+    "sanitize": [
+      "request.headers.authorization",
+      "request.body.walletPem",
+      "request.body.accessToken",
+      "request.body.refreshToken"
+    ]
+  }
+}

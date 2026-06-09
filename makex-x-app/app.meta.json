@@ -1,0 +1,12 @@
+{
+  "name": "makex-x-kj31eh",
+  "label": "MakeX-X",
+  "description": "X (Twitter) API wrapper for Make.com — post with media (images, GIFs, videos), read posts, replies, engagement stats, and search. Hybrid OAuth 2.0 PKCE + MakeX wallet authorization.",
+  "version": 1,
+  "versionFull": "1.0.0",
+  "theme": "#000000",
+  "beta": false,
+  "public": false,
+  "language": "en",
+  "audience": "global"
+}

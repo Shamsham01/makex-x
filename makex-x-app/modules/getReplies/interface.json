@@ -1,0 +1,20 @@
+[
+  { "name": "parentTweetId", "type": "text", "label": "Parent Post ID" },
+  {
+    "name": "replies",
+    "type": "array",
+    "label": "Replies",
+    "spec": {
+      "type": "collection",
+      "label": "Reply",
+      "spec": [
+        { "name": "id", "type": "text", "label": "Reply ID" },
+        { "name": "text", "type": "text", "label": "Text" },
+        { "name": "authorId", "type": "text", "label": "Author ID" },
+        { "name": "createdAt", "type": "date", "label": "Created At" }
+      ]
+    }
+  },
+  { "name": "replyCount", "type": "uinteger", "label": "Reply Count" },
+  { "name": "nextToken", "type": "text", "label": "Next Page Token" }
+]

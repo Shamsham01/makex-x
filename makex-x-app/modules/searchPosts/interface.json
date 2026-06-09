@@ -1,0 +1,22 @@
+[
+  { "name": "searchType", "type": "text", "label": "Search Type" },
+  { "name": "query", "type": "text", "label": "Query" },
+  {
+    "name": "posts",
+    "type": "array",
+    "label": "Posts",
+    "spec": {
+      "type": "collection",
+      "label": "Post",
+      "spec": [
+        { "name": "id", "type": "text", "label": "Post ID" },
+        { "name": "text", "type": "text", "label": "Text" },
+        { "name": "authorId", "type": "text", "label": "Author ID" },
+        { "name": "createdAt", "type": "date", "label": "Created At" },
+        { "name": "url", "type": "url", "label": "URL" }
+      ]
+    }
+  },
+  { "name": "resultCount", "type": "uinteger", "label": "Result Count" },
+  { "name": "nextToken", "type": "text", "label": "Next Page Token" }
+]

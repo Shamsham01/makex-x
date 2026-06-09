@@ -1,0 +1,9 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID",
+    "required": true,
+    "help": "Post ID to fetch engagement metrics for."
+  }
+]

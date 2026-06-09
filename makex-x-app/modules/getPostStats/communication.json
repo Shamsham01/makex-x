@@ -1,0 +1,40 @@
+{
+  "url": "/posts/stats",
+  "method": "POST",
+  "body": {
+    "tweetId": "{{parameters.tweetId}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "tweetId": "{{body.data.tweetId}}",
+        "retweetCount": "{{body.data.public_metrics.retweet_count}}",
+        "replyCount": "{{body.data.public_metrics.reply_count}}",
+        "likeCount": "{{body.data.public_metrics.like_count}}",
+        "quoteCount": "{{body.data.public_metrics.quote_count}}",
+        "bookmarkCount": "{{body.data.public_metrics.bookmark_count}}",
+        "impressionCount": "{{body.data.public_metrics.impression_count}}",
+        "publicMetrics": "{{body.data.public_metrics}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID"
+  },
+  {
+    "name": "text",
+    "type": "text",
+    "label": "Post Text"
+  },
+  {
+    "name": "url",
+    "type": "url",
+    "label": "Post URL"
+  },
+  {
+    "name": "mediaIds",
+    "type": "array",
+    "label": "Media IDs",
+    "spec": {
+      "type": "text",
+      "label": "Media ID"
+    }
+  },
+  {
+    "name": "createdAt",
+    "type": "date",
+    "label": "Created At"
+  },
+  {
+    "name": "usageFeeHash",
+    "type": "text",
+    "label": "Usage Fee Transaction Hash"
+  }
+]

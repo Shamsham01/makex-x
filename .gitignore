@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+warps-*.json
+.DS_Store
+
+# Local Make common data with real secrets (use common.example.json as template)
+makex-x-app/common.json

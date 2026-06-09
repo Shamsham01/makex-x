@@ -1,0 +1,8 @@
+[
+  { "name": "tweetId", "type": "text", "label": "Post ID" },
+  { "name": "text", "type": "text", "label": "Post Text" },
+  { "name": "authorId", "type": "text", "label": "Author ID" },
+  { "name": "createdAt", "type": "date", "label": "Created At" },
+  { "name": "url", "type": "url", "label": "Post URL" },
+  { "name": "publicMetrics", "type": "collection", "label": "Public Metrics" }
+]
