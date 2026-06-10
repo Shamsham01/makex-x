@@ -88,6 +88,8 @@ export async function handlePost(req, res) {
         bytes: mediaBuffer?.length || 0,
         filename: mediaFilename || null,
         mediaType,
+        troubleshooting: error.troubleshooting || null,
+        processingError: error.processingError || null,
         ...(error.xBody ? { xError: error.xBody } : {}),
       },
     });

@@ -3,7 +3,10 @@ const X_MEDIA_API = 'https://api.x.com/2/media/upload';
 const CHUNK_SIZE = 4 * 1024 * 1024;
 const SIMPLE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 
-function xApiError(body, status, fallback, uploadStage = null) {
+const VIDEO_TROUBLESHOOTING =
+  'X video processing requires MP4 (H.264 + AAC). Re-encode with: ffmpeg -i input.mp4 -c:v libx264 -profile:v high -level 4.0 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart output.mp4';
+
+function xApiError(body, status, fallback, uploadStage = null, extra = {}) {
   const message =
     body?.detail ||
     body?.title ||
@@ -16,6 +19,8 @@ function xApiError(body, status, fallback, uploadStage = null) {
   err.code = 'X_API_ERROR';
   err.xBody = body;
   if (uploadStage) err.uploadStage = uploadStage;
+  if (extra.troubleshooting) err.troubleshooting = extra.troubleshooting;
+  if (extra.processingError) err.processingError = extra.processingError;
   return err;
 }
 
@@ -29,14 +34,84 @@ function extensionFromFilename(filename) {
   return dot >= 0 ? String(filename).slice(dot + 1).toLowerCase() : '';
 }
 
-function resolveMediaMeta(mediaType = 'image', filename = '') {
+function detectMediaFromBuffer(buffer) {
+  if (!buffer?.length) return { kind: 'empty' };
+
+  const head = buffer.subarray(0, Math.min(buffer.length, 64)).toString('utf8').trimStart();
+  if (head.startsWith('<!DOCTYPE') || head.startsWith('<html') || head.startsWith('<?xml')) {
+    return { kind: 'html', mime: 'text/html' };
+  }
+  if (head.startsWith('{') || head.startsWith('[')) {
+    return { kind: 'json', mime: 'application/json' };
+  }
+
+  if (buffer.length >= 8 && buffer.subarray(4, 8).toString('ascii') === 'ftyp') {
+    return {
+      kind: 'mp4',
+      mime: 'video/mp4',
+      brand: buffer.subarray(8, 12).toString('ascii'),
+    };
+  }
+
+  if (buffer.subarray(0, 3).toString('ascii') === 'GIF') {
+    return { kind: 'gif', mime: 'image/gif' };
+  }
+
+  if (buffer[0] === 0x89 && buffer.subarray(1, 4).toString('ascii') === 'PNG') {
+    return { kind: 'png', mime: 'image/png' };
+  }
+
+  if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+    return { kind: 'jpeg', mime: 'image/jpeg' };
+  }
+
+  if (buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') {
+    return { kind: 'webp', mime: 'image/webp' };
+  }
+
+  return { kind: 'unknown' };
+}
+
+function formatProcessingFailure(info) {
+  const err = info?.error || {};
+  const parts = [
+    err.message,
+    err.name ? `(${err.name})` : null,
+    err.code != null ? `code=${err.code}` : null,
+  ].filter(Boolean);
+  return parts.join(' ') || 'Video processing failed on X';
+}
+
+function resolveMediaMeta(mediaType = 'image', filename = '', buffer = null) {
+  const detected = buffer ? detectMediaFromBuffer(buffer) : null;
   const ext = extensionFromFilename(filename);
   const normalized = String(mediaType || 'image').toLowerCase();
 
-  if (normalized === 'video' || ['mp4', 'mov', 'm4v', 'webm'].includes(ext)) {
+  if (detected?.kind === 'html' || detected?.kind === 'json') {
+    const err = xApiError(
+      { detected: detected.kind },
+      400,
+      `Downloaded file is ${detected.kind}, not media. Check the HTTP module URL returns raw video bytes.`,
+      'VALIDATE',
+    );
+    throw err;
+  }
+
+  if (detected?.mime?.startsWith('video/') || normalized === 'video' || ['mp4', 'mov', 'm4v', 'webm'].includes(ext)) {
+    if (detected?.kind === 'mp4') {
+      return { mime: 'video/mp4', category: 'tweet_video', chunked: true, detected };
+    }
+    if (detected?.kind === 'unknown' && normalized === 'video') {
+      return { mime: 'video/mp4', category: 'tweet_video', chunked: true, detected, assumed: true };
+    }
     const mime =
       ext === 'mov' || ext === 'qt' ? 'video/quicktime' : ext === 'webm' ? 'video/webm' : 'video/mp4';
-    return { mime, category: 'tweet_video', chunked: true };
+    return { mime, category: 'tweet_video', chunked: true, detected };
+  }
+
+  if (detected?.mime) {
+    if (detected.kind === 'gif') return { mime: detected.mime, category: 'tweet_gif', chunked: false, detected };
+    return { mime: detected.mime, category: 'tweet_image', chunked: false, detected };
   }
 
   if (normalized === 'gif' || ext === 'gif') {
@@ -112,11 +187,16 @@ async function waitForMediaProcessing(accessToken, mediaId) {
     }
 
     if (info.state === 'failed') {
+      const processingMessage = formatProcessingFailure(info);
       throw xApiError(
-        { errors: [{ message: info.error?.message || 'Video processing failed on X' }] },
+        { processing_info: info, errors: [{ message: processingMessage }] },
         502,
-        'X video processing failed',
+        processingMessage,
         'STATUS',
+        {
+          troubleshooting: VIDEO_TROUBLESHOOTING,
+          processingError: info.error || null,
+        },
       );
     }
 
@@ -124,7 +204,9 @@ async function waitForMediaProcessing(accessToken, mediaId) {
     await sleep(waitMs);
   }
 
-  throw xApiError({}, 504, 'Timed out waiting for X video processing', 'STATUS');
+  throw xApiError({}, 504, 'Timed out waiting for X video processing', 'STATUS', {
+    troubleshooting: VIDEO_TROUBLESHOOTING,
+  });
 }
 
 async function uploadMediaChunkedV2(accessToken, buffer, meta) {
@@ -163,15 +245,9 @@ async function uploadMediaChunkedV2(accessToken, buffer, meta) {
     segmentIndex += 1;
   }
 
-  const finalizeBody = await xMediaRequest(
-    accessToken,
-    `${X_MEDIA_API}/${mediaId}/finalize`,
-    { method: 'POST' },
-    'FINALIZE',
-  );
+  await xMediaRequest(accessToken, `${X_MEDIA_API}/${mediaId}/finalize`, { method: 'POST' }, 'FINALIZE');
 
-  const processingInfo = finalizeBody.data?.processing_info || finalizeBody.processing_info;
-  if (processingInfo && processingInfo.state !== 'succeeded') {
+  if (meta.category === 'tweet_video') {
     await waitForMediaProcessing(accessToken, mediaId);
   }
 
@@ -183,7 +259,8 @@ async function uploadMediaChunkedV2(accessToken, buffer, meta) {
       segments: segmentIndex,
       mime: meta.mime,
       category: meta.category,
-      processingState: processingInfo?.state || 'succeeded',
+      detected: meta.detected?.kind || null,
+      processingState: 'succeeded',
     },
   };
 }
@@ -194,16 +271,9 @@ export async function uploadMedia(accessToken, buffer, { mediaType = 'image', fi
   }
 
   const safeFilename =
-    filename ||
-    (String(mediaType).toLowerCase() === 'video' ? 'upload.mp4' : 'upload.jpg');
-  const meta = resolveMediaMeta(mediaType, safeFilename);
-  const useChunked = meta.chunked || buffer.length > SIMPLE_UPLOAD_MAX_BYTES;
+    filename || (String(mediaType).toLowerCase() === 'video' ? 'upload.mp4' : 'upload.jpg');
+  const meta = resolveMediaMeta(mediaType, safeFilename, buffer);
 
-  if (useChunked || meta.category === 'tweet_video') {
-    return uploadMediaChunkedV2(accessToken, buffer, meta);
-  }
-
-  // Small images/GIFs: v2 chunked flow with a single segment is reliable with OAuth 2.0.
   return uploadMediaChunkedV2(accessToken, buffer, meta);
 }
 
