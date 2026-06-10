@@ -37,14 +37,6 @@ function extensionFromFilename(filename) {
 function detectMediaFromBuffer(buffer) {
   if (!buffer?.length) return { kind: 'empty' };
 
-  const head = buffer.subarray(0, Math.min(buffer.length, 64)).toString('utf8').trimStart();
-  if (head.startsWith('<!DOCTYPE') || head.startsWith('<html') || head.startsWith('<?xml')) {
-    return { kind: 'html', mime: 'text/html' };
-  }
-  if (head.startsWith('{') || head.startsWith('[')) {
-    return { kind: 'json', mime: 'application/json' };
-  }
-
   if (buffer.length >= 8 && buffer.subarray(4, 8).toString('ascii') === 'ftyp') {
     return {
       kind: 'mp4',
@@ -69,6 +61,14 @@ function detectMediaFromBuffer(buffer) {
     return { kind: 'webp', mime: 'image/webp' };
   }
 
+  const head = buffer.subarray(0, Math.min(buffer.length, 64)).toString('utf8').trimStart();
+  if (head.startsWith('<!DOCTYPE') || head.startsWith('<html') || head.startsWith('<?xml')) {
+    return { kind: 'html', mime: 'text/html' };
+  }
+  if (head.startsWith('{') || head.startsWith('[')) {
+    return { kind: 'json', mime: 'application/json' };
+  }
+
   return { kind: 'unknown' };
 }
 
@@ -87,11 +87,11 @@ function resolveMediaMeta(mediaType = 'image', filename = '', buffer = null) {
   const ext = extensionFromFilename(filename);
   const normalized = String(mediaType || 'image').toLowerCase();
 
-  if (detected?.kind === 'html' || detected?.kind === 'json') {
+  if (detected?.kind === 'html') {
     const err = xApiError(
       { detected: detected.kind },
       400,
-      `Downloaded file is ${detected.kind}, not media. Check the HTTP module URL returns raw video bytes.`,
+      'Downloaded file is HTML, not media. Check the media URL returns raw video bytes.',
       'VALIDATE',
     );
     throw err;

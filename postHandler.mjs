@@ -1,4 +1,5 @@
 import { redactPemFromString } from './makexStandard.mjs';
+import { resolveMediaForUpload } from './mediaResolve.mjs';
 import { buildTweetUrl, createTweet, uploadMedia } from './xApi.mjs';
 
 function pickField(body, ...keys) {
@@ -41,19 +42,31 @@ export async function handlePost(req, res) {
   );
 
   try {
-    if (mediaType === 'video' && !mediaBuffer?.length) {
+    const hasMediaInput =
+      mediaBuffer?.length || pickField(body, 'mediaUrl', 'media_url', 'url');
+
+    if (mediaType === 'video' && !hasMediaInput) {
       return res.status(400).json({
         status: 'error',
         code: 'INVALID_REQUEST',
-        message: 'Video post requires media file data in the multipart upload',
+        message: 'Video post requires Media Data or Media URL',
         data: { timestamp: new Date().toISOString() },
       });
     }
 
-    if (mediaBuffer?.length) {
-      const uploaded = await uploadMedia(accessToken, mediaBuffer, { mediaType, filename: mediaFilename });
+    if (hasMediaInput) {
+      const resolved = await resolveMediaForUpload({
+        buffer: mediaBuffer,
+        body,
+        mediaType,
+        filename: mediaFilename,
+      });
+      const uploaded = await uploadMedia(accessToken, resolved.buffer, {
+        mediaType,
+        filename: resolved.filename,
+      });
       mediaIds.push(uploaded.mediaId);
-      uploadDetails = uploaded.uploadDetails;
+      uploadDetails = { ...uploaded.uploadDetails, source: resolved.source, url: resolved.url };
     }
 
     const xRes = await createTweet(accessToken, { text, replyToTweetId, mediaIds });

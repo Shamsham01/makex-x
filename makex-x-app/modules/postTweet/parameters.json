@@ -16,12 +16,19 @@
     "help": "Filename with extension (e.g. photo.jpg, clip.mp4, animation.gif)."
   },
   {
+    "name": "media_url",
+    "type": "url",
+    "label": "Media URL",
+    "required": false,
+    "help": "Direct public URL to image or video (e.g. Supabase storage). Recommended for videos — backend downloads server-side."
+  },
+  {
     "name": "media_data",
     "type": "buffer",
     "label": "Media Data",
     "required": false,
     "semantic": "file:data",
-    "help": "Image, GIF, or video file. Backend handles chunked upload for large videos."
+    "help": "Image, GIF, or video file from a previous module. Alternatively use Media URL."
   },
   {
     "name": "mediaType",
