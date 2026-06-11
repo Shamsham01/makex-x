@@ -1,5 +1,7 @@
-const X_TWEETS_URL = 'https://api.x.com/2/tweets';
-const X_MEDIA_API = 'https://api.x.com/2/media/upload';
+const X_API_BASE = 'https://api.x.com/2';
+const X_TWEETS_URL = `${X_API_BASE}/tweets`;
+const X_MEDIA_API = `${X_API_BASE}/media/upload`;
+const DEFAULT_TWEET_FIELDS = 'created_at,author_id,public_metrics,attachments,lang,conversation_id';
 const CHUNK_SIZE = 4 * 1024 * 1024;
 const SIMPLE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -313,7 +315,113 @@ export async function createTweet(accessToken, { text, replyToTweetId, mediaIds 
 }
 
 export function buildTweetUrl(username, tweetId) {
-  if (!username || !tweetId) return null;
+  if (!tweetId) return null;
+  if (!username) return `https://x.com/i/status/${tweetId}`;
   const handle = String(username).replace(/^@/, '');
   return `https://x.com/${handle}/status/${tweetId}`;
+}
+
+async function xGet(accessToken, path, query = {}, fallback = 'X API request failed') {
+  const url = new URL(`${X_API_BASE}${path}`);
+  for (const [key, value] of Object.entries(query)) {
+    if (value == null || value === '') continue;
+    if (Array.isArray(value)) {
+      url.searchParams.set(key, value.join(','));
+      continue;
+    }
+    url.searchParams.set(key, String(value));
+  }
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body.errors?.length) {
+    throw xApiError(
+      body,
+      res.status,
+      body.errors?.[0]?.message || body.detail || body.title || fallback,
+    );
+  }
+  return body;
+}
+
+function normalizeTweetFields(tweetFields) {
+  if (Array.isArray(tweetFields) && tweetFields.length) {
+    return tweetFields.map(String).join(',');
+  }
+  if (typeof tweetFields === 'string' && tweetFields.trim()) {
+    return tweetFields.trim();
+  }
+  return DEFAULT_TWEET_FIELDS;
+}
+
+function clampSearchMaxResults(maxResults, fallback = 10) {
+  const parsed = Number(maxResults);
+  const value = Number.isFinite(parsed) ? parsed : fallback;
+  return Math.min(Math.max(value, 10), 100);
+}
+
+export async function getTweet(accessToken, tweetId, { tweetFields } = {}) {
+  if (!tweetId) {
+    const err = new Error('tweetId is required');
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+
+  return xGet(
+    accessToken,
+    `/tweets/${encodeURIComponent(String(tweetId))}`,
+    { 'tweet.fields': normalizeTweetFields(tweetFields) },
+    'Failed to fetch post',
+  );
+}
+
+export async function searchRecentTweets(
+  accessToken,
+  query,
+  { maxResults = 10, paginationToken } = {},
+) {
+  const trimmed = String(query || '').trim();
+  if (!trimmed) {
+    const err = new Error('Search query is required');
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+
+  const params = {
+    query: trimmed,
+    max_results: clampSearchMaxResults(maxResults),
+    'tweet.fields': DEFAULT_TWEET_FIELDS,
+  };
+  if (paginationToken) params.next_token = String(paginationToken);
+
+  return xGet(accessToken, '/tweets/search/recent', params, 'Failed to search posts');
+}
+
+export async function getConversationReplies(
+  accessToken,
+  tweetId,
+  { maxResults = 10, paginationToken } = {},
+) {
+  if (!tweetId) {
+    const err = new Error('tweetId is required');
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+
+  const result = await searchRecentTweets(accessToken, `conversation_id:${tweetId}`, {
+    maxResults,
+    paginationToken,
+  });
+
+  const parentId = String(tweetId);
+  const replies = (result.data || []).filter((tweet) => String(tweet.id) !== parentId);
+  return {
+    ...result,
+    data: replies,
+  };
 }

@@ -10,6 +10,12 @@ import {
   redactPemFromString,
 } from './makexStandard.mjs';
 import { handlePost } from './postHandler.mjs';
+import {
+  handleGetPost,
+  handleGetPostStats,
+  handleGetReplies,
+  handleSearch,
+} from './readHandler.mjs';
 
 dotenv.config();
 
@@ -105,6 +111,11 @@ app.post('/post', (req, res, next) => {
   }
   return handlePost(req, res);
 });
+
+app.post('/posts/get', checkToken, handleGetPost);
+app.post('/posts/replies', checkToken, handleGetReplies);
+app.post('/posts/stats', checkToken, handleGetPostStats);
+app.post('/search', checkToken, handleSearch);
 
 app.post('/oauth/token', checkToken, async (req, res) => {
   try {

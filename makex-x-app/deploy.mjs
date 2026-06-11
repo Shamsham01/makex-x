@@ -93,12 +93,19 @@ function ensureModule(mod) {
 }
 
 function setModuleSections(modName) {
+  const mappableParams = readJson(`modules/${modName}/parameters.json`);
+  runCli([
+    'sdk-modules', 'set-section',
+    `--app-name=${APP_NAME}`, `--app-version=${APP_VERSION}`,
+    `--module-name=${modName}`, '--section=expect',
+    `--body=${JSON.stringify(mappableParams)}`,
+  ], `Set ${modName} mappable parameters`);
   runCli([
     'sdk-modules', 'set-section',
     `--app-name=${APP_NAME}`, `--app-version=${APP_VERSION}`,
     `--module-name=${modName}`, '--section=parameters',
-    `--body=${JSON.stringify(readJson(`modules/${modName}/parameters.json`))}`,
-  ], `Set ${modName} parameters`);
+    '--body=[]',
+  ], `Clear ${modName} static parameters`);
   runCli([
     'sdk-modules', 'set-section',
     `--app-name=${APP_NAME}`, `--app-version=${APP_VERSION}`,

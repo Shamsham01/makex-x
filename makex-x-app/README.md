@@ -155,7 +155,8 @@ make-cli sdk-connections set-section --connection-name=makex-x-kj31eh --section=
 ```powershell
 # Example: Post module
 make-cli sdk-modules create --app-name=makex-x-kj31eh --app-version=1 --name=postTweet --type-id=4 --label="Post" --module-init-mode=blank
-make-cli sdk-modules set-section --app-name=makex-x-kj31eh --app-version=1 --module-name=postTweet --section=parameters --body="$(Get-Content modules/postTweet/parameters.json -Raw)"
+make-cli sdk-modules set-section --app-name=makex-x-kj31eh --app-version=1 --module-name=postTweet --section=expect --body="$(Get-Content modules/postTweet/parameters.json -Raw)"
+make-cli sdk-modules set-section --app-name=makex-x-kj31eh --app-version=1 --module-name=postTweet --section=parameters --body="[]"
 make-cli sdk-modules set-section --app-name=makex-x-kj31eh --app-version=1 --module-name=postTweet --section=api --body="$(Get-Content modules/postTweet/communication.json -Raw)"
 make-cli sdk-modules update --app-name=makex-x-kj31eh --app-version=1 --module-name=postTweet --connection=makex-x-kj31eh
 ```
