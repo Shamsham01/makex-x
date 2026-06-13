@@ -16,6 +16,7 @@ import {
   handleGetReplies,
   handleSearch,
 } from './readHandler.mjs';
+import { handleUsageFee } from './usageFee.mjs';
 
 dotenv.config();
 
@@ -106,16 +107,16 @@ app.post('/post', (req, res, next) => {
           data: { timestamp: new Date().toISOString() },
         });
       }
-      return handlePost(req, res);
+      return next();
     });
   }
-  return handlePost(req, res);
-});
+  return next();
+}, handleUsageFee, handlePost);
 
-app.post('/posts/get', checkToken, handleGetPost);
-app.post('/posts/replies', checkToken, handleGetReplies);
-app.post('/posts/stats', checkToken, handleGetPostStats);
-app.post('/search', checkToken, handleSearch);
+app.post('/posts/get', checkToken, handleUsageFee, handleGetPost);
+app.post('/posts/replies', checkToken, handleUsageFee, handleGetReplies);
+app.post('/posts/stats', checkToken, handleUsageFee, handleGetPostStats);
+app.post('/search', checkToken, handleUsageFee, handleSearch);
 
 app.post('/oauth/token', checkToken, async (req, res) => {
   try {

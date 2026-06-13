@@ -1,4 +1,5 @@
 import { redactPemFromString } from './makexStandard.mjs';
+import { usageFeeFields } from './usageFee.mjs';
 import {
   buildTweetUrl,
   getConversationReplies,
@@ -100,6 +101,7 @@ export async function handleGetPost(req, res) {
       data: {
         tweet,
         url: buildTweetUrl(xUsername, tweet.id),
+        ...usageFeeFields(req),
       },
     });
   } catch (error) {
@@ -131,6 +133,7 @@ export async function handleGetReplies(req, res) {
         replies,
         replyCount: replies.length,
         nextToken: xRes.meta?.next_token || null,
+        ...usageFeeFields(req),
       },
     });
   } catch (error) {
@@ -159,6 +162,7 @@ export async function handleGetPostStats(req, res) {
       data: {
         tweetId: tweet.id || String(tweetId),
         public_metrics: metrics,
+        ...usageFeeFields(req),
       },
     });
   } catch (error) {
@@ -194,6 +198,7 @@ export async function handleSearch(req, res) {
         posts,
         resultCount: posts.length,
         nextToken: xRes.meta?.next_token || null,
+        ...usageFeeFields(req),
       },
     });
   } catch (error) {

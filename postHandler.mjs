@@ -1,4 +1,5 @@
 import { redactPemFromString } from './makexStandard.mjs';
+import { usageFeeFields } from './usageFee.mjs';
 import { resolveMediaForUpload } from './mediaResolve.mjs';
 import { buildTweetUrl, createTweet, uploadMedia } from './xApi.mjs';
 
@@ -85,6 +86,7 @@ export async function handlePost(req, res) {
         url: buildTweetUrl(xUsername, tweetId),
         createdAt: new Date().toISOString(),
         uploadDetails,
+        ...usageFeeFields(req),
       },
     });
   } catch (error) {
