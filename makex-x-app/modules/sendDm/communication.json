@@ -1,0 +1,37 @@
+{
+  "url": "/dm/send",
+  "method": "POST",
+  "body": {
+    "participantId": "{{parameters.participantId}}",
+    "text": "{{parameters.text}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "dmEventId": "{{body.data.dmEventId}}",
+        "dmConversationId": "{{body.data.dmConversationId}}",
+        "participantId": "{{body.data.participantId}}",
+        "text": "{{body.data.text}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

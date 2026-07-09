@@ -1,0 +1,16 @@
+[
+  {
+    "name": "username",
+    "type": "text",
+    "label": "Username",
+    "required": false,
+    "help": "X handle with or without @. Provide username or User ID."
+  },
+  {
+    "name": "userId",
+    "type": "text",
+    "label": "User ID",
+    "required": false,
+    "help": "Numeric X user ID. Used when Username is empty."
+  }
+]

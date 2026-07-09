@@ -11,11 +11,21 @@ import {
 } from './makexStandard.mjs';
 import { handlePost } from './postHandler.mjs';
 import {
+  handleGetMentions,
   handleGetPost,
   handleGetPostStats,
   handleGetReplies,
+  handleGetUser,
+  handleGetUserPosts,
   handleSearch,
 } from './readHandler.mjs';
+import {
+  handleAddBookmark,
+  handleDeletePost,
+  handleListBookmarks,
+  handleRemoveBookmark,
+  handleSendDm,
+} from './manageHandler.mjs';
 import { handleUsageFee } from './usageFee.mjs';
 
 dotenv.config();
@@ -116,7 +126,15 @@ app.post('/post', (req, res, next) => {
 app.post('/posts/get', checkToken, handleUsageFee, handleGetPost);
 app.post('/posts/replies', checkToken, handleUsageFee, handleGetReplies);
 app.post('/posts/stats', checkToken, handleUsageFee, handleGetPostStats);
+app.post('/posts/delete', checkToken, handleUsageFee, handleDeletePost);
 app.post('/search', checkToken, handleUsageFee, handleSearch);
+app.post('/users/get', checkToken, handleUsageFee, handleGetUser);
+app.post('/users/posts', checkToken, handleUsageFee, handleGetUserPosts);
+app.post('/users/mentions', checkToken, handleUsageFee, handleGetMentions);
+app.post('/dm/send', checkToken, handleUsageFee, handleSendDm);
+app.post('/bookmarks/list', checkToken, handleUsageFee, handleListBookmarks);
+app.post('/bookmarks/add', checkToken, handleUsageFee, handleAddBookmark);
+app.post('/bookmarks/remove', checkToken, handleUsageFee, handleRemoveBookmark);
 
 app.post('/oauth/token', checkToken, async (req, res) => {
   try {

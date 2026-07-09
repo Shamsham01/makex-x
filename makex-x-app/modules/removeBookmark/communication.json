@@ -1,0 +1,36 @@
+{
+  "url": "/bookmarks/remove",
+  "method": "POST",
+  "body": {
+    "tweetId": "{{parameters.tweetId}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "userId": "{{body.data.userId}}",
+        "tweetId": "{{body.data.tweetId}}",
+        "bookmarked": "{{body.data.bookmarked}}",
+        "removed": "{{body.data.removed}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

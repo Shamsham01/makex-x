@@ -1,0 +1,17 @@
+[
+  {
+    "name": "participantId",
+    "type": "text",
+    "label": "Recipient User ID",
+    "required": true,
+    "help": "Numeric X user ID of the DM recipient. Use Get User to resolve a username first."
+  },
+  {
+    "name": "text",
+    "type": "text",
+    "label": "Message",
+    "required": true,
+    "multiline": true,
+    "help": "Direct message text. Automated DMs require recipient consent per X Automation Rules."
+  }
+]

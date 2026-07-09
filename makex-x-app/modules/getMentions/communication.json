@@ -1,0 +1,38 @@
+{
+  "url": "/users/mentions",
+  "method": "POST",
+  "body": {
+    "maxResults": "{{parameters.maxResults}}",
+    "paginationToken": "{{parameters.paginationToken}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}",
+    "xUsername": "{{connection.username}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "userId": "{{body.data.userId}}",
+        "posts": "{{body.data.posts}}",
+        "resultCount": "{{body.data.resultCount}}",
+        "nextToken": "{{body.data.nextToken}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

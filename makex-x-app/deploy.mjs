@@ -19,10 +19,18 @@ const CLI = process.env.MAKE_CLI_PATH || join(
 
 const MODULES = [
   { name: 'postTweet', label: 'Post', description: 'Create an X post with optional image, GIF, or video media and text.' },
+  { name: 'deletePost', label: 'Delete Post', description: 'Delete an X post owned by the connected account.' },
   { name: 'getPostById', label: 'Get Post by ID', description: 'Retrieve a single X post by its ID.' },
   { name: 'getReplies', label: 'Get Replies', description: 'List replies in a conversation thread for a given post ID.' },
   { name: 'getPostStats', label: 'Get Post Stats', description: 'Fetch engagement metrics for a post.' },
   { name: 'searchPosts', label: 'Search Posts', description: 'Search recent posts by hashtag, username, or keyword.' },
+  { name: 'getUser', label: 'Get User', description: 'Look up an X user profile by username or user ID.' },
+  { name: 'getUserPosts', label: 'Get User Posts', description: 'List recent posts from a user timeline (defaults to connected account).' },
+  { name: 'getMentions', label: 'Get Mentions', description: 'List recent mentions of the connected account.' },
+  { name: 'sendDm', label: 'Send DM', description: 'Send a direct message to a user by their numeric user ID.' },
+  { name: 'listBookmarks', label: 'List Bookmarks', description: 'List bookmarked posts for the connected account.' },
+  { name: 'addBookmark', label: 'Add Bookmark', description: 'Bookmark a post for the connected account.' },
+  { name: 'removeBookmark', label: 'Remove Bookmark', description: 'Remove a post from the connected account bookmarks.' },
 ];
 
 function readJson(relPath, fallbackPath = null) {

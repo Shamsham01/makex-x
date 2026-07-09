@@ -1,0 +1,17 @@
+[
+  { "name": "id", "type": "text", "label": "User ID" },
+  { "name": "name", "type": "text", "label": "Display Name" },
+  { "name": "username", "type": "text", "label": "Username" },
+  { "name": "description", "type": "text", "label": "Bio" },
+  { "name": "createdAt", "type": "date", "label": "Created At" },
+  { "name": "verified", "type": "boolean", "label": "Verified" },
+  { "name": "verifiedType", "type": "text", "label": "Verified Type" },
+  { "name": "profileImageUrl", "type": "url", "label": "Profile Image URL" },
+  { "name": "profileUrl", "type": "url", "label": "Profile URL" },
+  { "name": "location", "type": "text", "label": "Location" },
+  { "name": "followersCount", "type": "number", "label": "Followers" },
+  { "name": "followingCount", "type": "number", "label": "Following" },
+  { "name": "tweetCount", "type": "number", "label": "Post Count" },
+  { "name": "publicMetrics", "type": "collection", "label": "Public Metrics" },
+  { "name": "usageFeeHash", "type": "text", "label": "Usage Fee Transaction Hash" }
+]

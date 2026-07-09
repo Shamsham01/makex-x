@@ -1,0 +1,5 @@
+[
+  { "name": "tweetId", "type": "text", "label": "Post ID" },
+  { "name": "deleted", "type": "boolean", "label": "Deleted" },
+  { "name": "usageFeeHash", "type": "text", "label": "Usage Fee Transaction Hash" }
+]

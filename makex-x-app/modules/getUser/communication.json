@@ -1,0 +1,47 @@
+{
+  "url": "/users/get",
+  "method": "POST",
+  "body": {
+    "username": "{{parameters.username}}",
+    "userId": "{{parameters.userId}}",
+    "walletPem": "{{connection.pemContent}}",
+    "accessToken": "{{connection.accessToken}}",
+    "refreshToken": "{{connection.refreshToken}}",
+    "xUserId": "{{connection.userId}}"
+  },
+  "response": {
+    "valid": {
+      "condition": "{{body.status = 'success'}}"
+    },
+    "error": {
+      "type": "DataError",
+      "message": "[{{ifempty(body.code; statusCode)}}] {{body.message}}",
+      "detail": {
+        "code": "{{body.code}}",
+        "troubleshooting": "{{body.data.troubleshooting}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    },
+    "output": {
+      "status": "{{body.status}}",
+      "message": "{{body.message}}",
+      "data": {
+        "id": "{{body.data.user.id}}",
+        "name": "{{body.data.user.name}}",
+        "username": "{{body.data.user.username}}",
+        "description": "{{body.data.user.description}}",
+        "createdAt": "{{body.data.user.createdAt}}",
+        "verified": "{{body.data.user.verified}}",
+        "verifiedType": "{{body.data.user.verifiedType}}",
+        "profileImageUrl": "{{body.data.user.profileImageUrl}}",
+        "profileUrl": "{{body.data.profileUrl}}",
+        "location": "{{body.data.user.location}}",
+        "followersCount": "{{body.data.user.publicMetrics.followers_count}}",
+        "followingCount": "{{body.data.user.publicMetrics.following_count}}",
+        "tweetCount": "{{body.data.user.publicMetrics.tweet_count}}",
+        "publicMetrics": "{{body.data.user.publicMetrics}}",
+        "usageFeeHash": "{{body.data.usageFeeHash}}"
+      }
+    }
+  }
+}

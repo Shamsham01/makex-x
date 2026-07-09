@@ -12,10 +12,16 @@ MakeX-X is a **Make.com custom app** that wraps the X (Twitter) API v2 through t
 | Module | Description |
 |--------|-------------|
 | **Post** | Create posts with text and optional image, GIF, or video (multipart upload via backend) |
+| **Delete Post** | Delete a post owned by the connected account |
 | **Get Post by ID** | Fetch a single post with metrics and metadata |
 | **Get Replies** | List conversation replies with pagination |
 | **Get Post Stats** | Engagement: likes, reposts, replies, quotes, bookmarks, impressions |
 | **Search Posts** | Search by hashtag, username, or keyword |
+| **Get User** | Look up a profile by username or user ID |
+| **Get User Posts** | List a user timeline (defaults to connected account) |
+| **Get Mentions** | List mentions of the connected account |
+| **Send DM** | Send a direct message by recipient user ID |
+| **List / Add / Remove Bookmark** | Manage bookmarks for the connected account |
 
 ---
 
@@ -31,12 +37,18 @@ MakeX-X Custom App (Make)
     │
     ▼
 https://makex-x.onrender.com
-    │  POST /authorization  → validate wallet PEM (preauthorize)
-    │  POST /post           → tweet + media upload
-    │  POST /posts/get      → read post
-    │  POST /posts/replies  → thread replies
-    │  POST /posts/stats    → engagement
-    │  POST /search         → hashtag / username / keyword
+    │  POST /authorization     → validate wallet PEM (preauthorize)
+    │  POST /post              → tweet + media upload
+    │  POST /posts/get         → read post
+    │  POST /posts/replies     → thread replies
+    │  POST /posts/stats       → engagement
+    │  POST /posts/delete      → delete post
+    │  POST /search            → hashtag / username / keyword
+    │  POST /users/get         → user lookup
+    │  POST /users/posts       → user timeline
+    │  POST /users/mentions    → mentions inbox
+    │  POST /dm/send           → send DM
+    │  POST /bookmarks/*       → list / add / remove bookmarks
     │
     ▼
 X API v2 (OAuth user context)
@@ -53,6 +65,9 @@ X API v2 (OAuth user context)
 ### Default OAuth scopes
 
 - `tweet.read`, `tweet.write`, `users.read`, `offline.access`, `media.write`
+- `dm.read`, `dm.write`, `bookmark.read`, `bookmark.write`
+
+> After deploying scope changes, **re-authorize** existing Make connections so new DM/bookmark scopes are granted.
 
 ---
 

@@ -425,3 +425,193 @@ export async function getConversationReplies(
     data: replies,
   };
 }
+
+const DEFAULT_USER_FIELDS =
+  'created_at,description,public_metrics,verified,verified_type,profile_image_url,url,protected,location';
+
+async function xJson(accessToken, path, { method = 'GET', query, json, fallback } = {}) {
+  const url = new URL(`${X_API_BASE}${path}`);
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value == null || value === '') continue;
+      if (Array.isArray(value)) {
+        url.searchParams.set(key, value.join(','));
+        continue;
+      }
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  let body;
+  if (json != null) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(json);
+  }
+
+  const res = await fetch(url, { method, headers, body });
+  const parsed = await res.json().catch(() => ({}));
+  if (!res.ok || parsed.errors?.length) {
+    throw xApiError(
+      parsed,
+      res.status,
+      parsed.errors?.[0]?.message || parsed.detail || parsed.title || fallback || 'X API request failed',
+    );
+  }
+  return parsed;
+}
+
+function normalizeUserFields(userFields) {
+  if (Array.isArray(userFields) && userFields.length) {
+    return userFields.map(String).join(',');
+  }
+  if (typeof userFields === 'string' && userFields.trim()) {
+    return userFields.trim();
+  }
+  return DEFAULT_USER_FIELDS;
+}
+
+function clampTimelineMaxResults(maxResults, fallback = 10) {
+  const parsed = Number(maxResults);
+  const value = Number.isFinite(parsed) ? parsed : fallback;
+  return Math.min(Math.max(value, 5), 100);
+}
+
+function requireId(value, label) {
+  if (!value) {
+    const err = new Error(`${label} is required`);
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+  return String(value);
+}
+
+export async function deleteTweet(accessToken, tweetId) {
+  const id = requireId(tweetId, 'tweetId');
+  return xJson(accessToken, `/tweets/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    fallback: 'Failed to delete post',
+  });
+}
+
+export async function getUserByUsername(accessToken, username, { userFields } = {}) {
+  const handle = String(username || '').replace(/^@/, '').trim();
+  if (!handle) {
+    const err = new Error('username is required');
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+
+  return xJson(accessToken, `/users/by/username/${encodeURIComponent(handle)}`, {
+    query: { 'user.fields': normalizeUserFields(userFields) },
+    fallback: 'Failed to fetch user by username',
+  });
+}
+
+export async function getUserById(accessToken, userId, { userFields } = {}) {
+  const id = requireId(userId, 'userId');
+  return xJson(accessToken, `/users/${encodeURIComponent(id)}`, {
+    query: { 'user.fields': normalizeUserFields(userFields) },
+    fallback: 'Failed to fetch user',
+  });
+}
+
+export async function getUserTweets(
+  accessToken,
+  userId,
+  { maxResults = 10, paginationToken, tweetFields } = {},
+) {
+  const id = requireId(userId, 'userId');
+  const params = {
+    max_results: clampTimelineMaxResults(maxResults),
+    'tweet.fields': normalizeTweetFields(tweetFields),
+  };
+  if (paginationToken) params.pagination_token = String(paginationToken);
+
+  return xJson(accessToken, `/users/${encodeURIComponent(id)}/tweets`, {
+    query: params,
+    fallback: 'Failed to fetch user posts',
+  });
+}
+
+export async function getUserMentions(
+  accessToken,
+  userId,
+  { maxResults = 10, paginationToken, tweetFields } = {},
+) {
+  const id = requireId(userId, 'userId');
+  const params = {
+    max_results: clampTimelineMaxResults(maxResults),
+    'tweet.fields': normalizeTweetFields(tweetFields),
+  };
+  if (paginationToken) params.pagination_token = String(paginationToken);
+
+  return xJson(accessToken, `/users/${encodeURIComponent(id)}/mentions`, {
+    query: params,
+    fallback: 'Failed to fetch mentions',
+  });
+}
+
+export async function sendDirectMessage(accessToken, participantId, text) {
+  const id = requireId(participantId, 'participantId');
+  const message = String(text || '').trim();
+  if (!message) {
+    const err = new Error('DM text is required');
+    err.status = 400;
+    err.code = 'INVALID_REQUEST';
+    throw err;
+  }
+
+  return xJson(
+    accessToken,
+    `/dm_conversations/with/${encodeURIComponent(id)}/messages`,
+    {
+      method: 'POST',
+      json: { text: message },
+      fallback: 'Failed to send direct message',
+    },
+  );
+}
+
+export async function listBookmarks(
+  accessToken,
+  userId,
+  { maxResults = 10, paginationToken, tweetFields } = {},
+) {
+  const id = requireId(userId, 'userId');
+  const params = {
+    max_results: clampTimelineMaxResults(maxResults),
+    'tweet.fields': normalizeTweetFields(tweetFields),
+  };
+  if (paginationToken) params.pagination_token = String(paginationToken);
+
+  return xJson(accessToken, `/users/${encodeURIComponent(id)}/bookmarks`, {
+    query: params,
+    fallback: 'Failed to list bookmarks',
+  });
+}
+
+export async function addBookmark(accessToken, userId, tweetId) {
+  const id = requireId(userId, 'userId');
+  const postId = requireId(tweetId, 'tweetId');
+  return xJson(accessToken, `/users/${encodeURIComponent(id)}/bookmarks`, {
+    method: 'POST',
+    json: { tweet_id: postId },
+    fallback: 'Failed to add bookmark',
+  });
+}
+
+export async function removeBookmark(accessToken, userId, tweetId) {
+  const id = requireId(userId, 'userId');
+  const postId = requireId(tweetId, 'tweetId');
+  return xJson(
+    accessToken,
+    `/users/${encodeURIComponent(id)}/bookmarks/${encodeURIComponent(postId)}`,
+    {
+      method: 'DELETE',
+      fallback: 'Failed to remove bookmark',
+    },
+  );
+}

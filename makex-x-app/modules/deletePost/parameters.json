@@ -1,0 +1,9 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID",
+    "required": true,
+    "help": "The X post (tweet) ID to delete. Must belong to the connected account."
+  }
+]

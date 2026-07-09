@@ -1,0 +1,17 @@
+[
+  {
+    "name": "maxResults",
+    "type": "uinteger",
+    "label": "Max Results",
+    "required": false,
+    "default": 10,
+    "help": "Maximum bookmarks to return (5–100). Always for the connected account."
+  },
+  {
+    "name": "paginationToken",
+    "type": "text",
+    "label": "Pagination Token",
+    "required": false,
+    "help": "next_token from a previous response for pagination."
+  }
+]

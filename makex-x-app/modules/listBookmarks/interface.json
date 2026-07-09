@@ -1,0 +1,21 @@
+[
+  { "name": "userId", "type": "text", "label": "User ID" },
+  {
+    "name": "posts",
+    "type": "array",
+    "label": "Bookmarks",
+    "spec": {
+      "type": "collection",
+      "label": "Bookmark",
+      "spec": [
+        { "name": "id", "type": "text", "label": "Post ID" },
+        { "name": "text", "type": "text", "label": "Text" },
+        { "name": "authorId", "type": "text", "label": "Author ID" },
+        { "name": "createdAt", "type": "date", "label": "Created At" }
+      ]
+    }
+  },
+  { "name": "resultCount", "type": "number", "label": "Result Count" },
+  { "name": "nextToken", "type": "text", "label": "Next Token" },
+  { "name": "usageFeeHash", "type": "text", "label": "Usage Fee Transaction Hash" }
+]

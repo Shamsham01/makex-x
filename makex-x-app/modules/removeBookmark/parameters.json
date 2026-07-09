@@ -1,0 +1,9 @@
+[
+  {
+    "name": "tweetId",
+    "type": "text",
+    "label": "Post ID",
+    "required": true,
+    "help": "The X post ID to remove from the connected account bookmarks."
+  }
+]

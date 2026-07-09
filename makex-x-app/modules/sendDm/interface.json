@@ -1,0 +1,7 @@
+[
+  { "name": "dmEventId", "type": "text", "label": "DM Event ID" },
+  { "name": "dmConversationId", "type": "text", "label": "Conversation ID" },
+  { "name": "participantId", "type": "text", "label": "Recipient User ID" },
+  { "name": "text", "type": "text", "label": "Message" },
+  { "name": "usageFeeHash", "type": "text", "label": "Usage Fee Transaction Hash" }
+]
