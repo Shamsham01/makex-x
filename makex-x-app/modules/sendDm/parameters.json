@@ -13,5 +13,12 @@
     "required": true,
     "multiline": true,
     "help": "Direct message text. Automated DMs require recipient consent per X Automation Rules."
+  },
+  {
+    "name": "idempotencyKey",
+    "type": "text",
+    "label": "Idempotency Key",
+    "required": false,
+    "help": "Leave empty to treat an identical retry as the same operation. Set a new value to repeat an identical operation on purpose."
   }
 ]

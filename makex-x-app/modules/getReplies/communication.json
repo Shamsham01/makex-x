@@ -8,7 +8,8 @@
     "walletPem": "{{connection.pemContent}}",
     "accessToken": "{{connection.accessToken}}",
     "refreshToken": "{{connection.refreshToken}}",
-    "xUserId": "{{connection.userId}}"
+    "xUserId": "{{connection.userId}}",
+    "idempotencyKey": "{{ifempty(parameters.idempotencyKey; '')}}"
   },
   "response": {
     "valid": {

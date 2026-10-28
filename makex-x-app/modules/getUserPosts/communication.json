@@ -10,7 +10,8 @@
     "accessToken": "{{connection.accessToken}}",
     "refreshToken": "{{connection.refreshToken}}",
     "xUserId": "{{connection.userId}}",
-    "xUsername": "{{connection.username}}"
+    "xUsername": "{{connection.username}}",
+    "idempotencyKey": "{{ifempty(parameters.idempotencyKey; '')}}"
   },
   "response": {
     "valid": {

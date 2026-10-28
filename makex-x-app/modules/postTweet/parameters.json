@@ -37,9 +37,18 @@
     "required": false,
     "default": "image",
     "options": [
-      { "label": "Image (JPEG/PNG/WEBP)", "value": "image" },
-      { "label": "GIF", "value": "gif" },
-      { "label": "Video (MP4)", "value": "video" }
+      {
+        "label": "Image (JPEG/PNG/WEBP)",
+        "value": "image"
+      },
+      {
+        "label": "GIF",
+        "value": "gif"
+      },
+      {
+        "label": "Video (MP4)",
+        "value": "video"
+      }
     ],
     "help": "Hint for the upload pipeline when attaching media."
   },
@@ -49,5 +58,12 @@
     "label": "Reply To Post ID",
     "required": false,
     "help": "Optional post ID to reply to."
+  },
+  {
+    "name": "idempotencyKey",
+    "type": "text",
+    "label": "Idempotency Key",
+    "required": false,
+    "help": "Leave empty to treat an identical retry as the same operation. Set a new value to repeat an identical operation on purpose."
   }
 ]

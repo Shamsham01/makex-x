@@ -19,7 +19,8 @@
         "options": {
           "filename": "{{parameters.media_file_name}}"
         }
-      }
+      },
+      "idempotencyKey": "{{ifempty(parameters.idempotencyKey; '')}}"
     },
     "response": {
       "valid": {
@@ -65,7 +66,8 @@
       "accessToken": "{{connection.accessToken}}",
       "refreshToken": "{{connection.refreshToken}}",
       "xUserId": "{{connection.userId}}",
-      "xUsername": "{{connection.username}}"
+      "xUsername": "{{connection.username}}",
+      "idempotencyKey": "{{ifempty(parameters.idempotencyKey; '')}}"
     },
     "response": {
       "valid": {
@@ -109,7 +111,8 @@
       "accessToken": "{{connection.accessToken}}",
       "refreshToken": "{{connection.refreshToken}}",
       "xUserId": "{{connection.userId}}",
-      "xUsername": "{{connection.username}}"
+      "xUsername": "{{connection.username}}",
+      "idempotencyKey": "{{ifempty(parameters.idempotencyKey; '')}}"
     },
     "response": {
       "valid": {

@@ -20,5 +20,12 @@
     "label": "Pagination Token",
     "required": false,
     "help": "next_token from a previous run to fetch the next page."
+  },
+  {
+    "name": "idempotencyKey",
+    "type": "text",
+    "label": "Idempotency Key",
+    "required": false,
+    "help": "Leave empty to treat an identical retry as the same operation. Set a new value to repeat an identical operation on purpose."
   }
 ]
