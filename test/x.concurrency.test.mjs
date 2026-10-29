@@ -6,7 +6,7 @@ import { createUsageFeeMiddleware, resetUsageFeeStateForTests } from '../usageFe
 
 const WALLET = 'erd1t2r97zcjg8uvf0e9nk4psj2kvg27mph9kq5xls6xtnyg2aemp8hszcmn8f';
 
-function app() {
+function app(options = {}) {
   resetUsageFeeStateForTests();
   const actions = [];
   const chain = {
@@ -47,12 +47,16 @@ function app() {
     signFeeTransaction: async (tx) => { tx.signature = Buffer.alloc(64, 4); },
     log: () => {},
     network: '1',
+    claimTtlMs: options.claimTtlMs,
+    claimRenewMs: options.claimRenewMs,
+    now: options.now,
+    scheduleClaimRenewal: options.scheduleClaimRenewal,
   });
   return { actions, chain, store, handleUsageFee };
 }
 
-function call(handleUsageFee, body, action) {
-  const req = { method: 'POST', path: '/post', body, headers: {} };
+function call(handleUsageFee, body, action, file) {
+  const req = { method: 'POST', path: '/post', body, headers: {}, file };
   const res = {
     statusCode: 200,
     body: undefined,
@@ -120,4 +124,87 @@ test('a direct-message handler is not entered twice for the same key', async () 
   assert.equal(second.res.body.code, 'OPERATION_IN_PROGRESS');
   release();
   await first;
+});
+
+test('a post that outlasts the original claim stays owned by the worker that started it', async () => {
+  let clock = 1_000_000;
+  let renew = async () => {};
+  const { actions, chain, handleUsageFee } = app({
+    claimTtlMs: 1_000,
+    claimRenewMs: 1_000,
+    now: () => clock,
+    scheduleClaimRenewal: (callback) => {
+      renew = callback;
+      return () => {};
+    },
+  });
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const body = { idempotencyKey: 'long-post', text: 'still posting' };
+  const first = call(handleUsageFee, body, async (_req, res) => {
+    actions.push('post');
+    clock += 5_000;
+    await renew();
+    await gate;
+    await res.json({ status: 'success', code: 'POSTED', data: { tweetId: 'long' } });
+  });
+  while (!actions.includes('post')) await new Promise((resolve) => setTimeout(resolve, 5));
+  const second = await call(handleUsageFee, body, async () => {
+    actions.push('post-again');
+  });
+  assert.equal(second.nextCalled, false);
+  assert.equal(second.res.body.code, 'OPERATION_IN_PROGRESS');
+  release();
+  const finished = await first;
+  assert.equal(finished.res.body.data.tweetId, 'long');
+  assert.deepEqual(actions, ['post']);
+  assert.equal(chain.sent.length, 1);
+});
+
+test('the same post key with different media does not publish twice', async () => {
+  const { actions, chain, handleUsageFee } = app();
+  const body = { idempotencyKey: 'media-post', text: 'caption' };
+  const first = await call(handleUsageFee, body, async (_req, res) => {
+    actions.push('post');
+    await res.json({ status: 'success', code: 'POSTED', data: { tweetId: 'media-1' } });
+  }, { buffer: Buffer.from('image-a') });
+  const second = await call(handleUsageFee, body, async () => {
+    actions.push('post-again');
+  }, { buffer: Buffer.from('image-b') });
+  assert.equal(first.res.statusCode, 200);
+  assert.equal(second.res.statusCode, 409);
+  assert.equal(second.res.body.code, 'IDEMPOTENCY_CONFLICT');
+  assert.equal(second.nextCalled, false);
+  assert.deepEqual(actions, ['post']);
+  assert.equal(chain.sent.length, 1);
+  const replay = await call(handleUsageFee, body, async () => {
+    actions.push('replay');
+  }, { buffer: Buffer.from('image-a') });
+  assert.equal(replay.nextCalled, false);
+  assert.equal(replay.res.body.data.tweetId, 'media-1');
+});
+
+test('a published post is not repeated when its result cannot be stored', async () => {
+  const { actions, chain, store, handleUsageFee } = app();
+  const original = store.finishBusiness.bind(store);
+  store.finishBusiness = async (args) => {
+    if (args.patch?.state === 'OPERATION_CONFIRMED') return { ok: false, reason: 'db_down' };
+    return original(args);
+  };
+  const body = { idempotencyKey: 'unstored-post', text: 'published' };
+  const first = await call(handleUsageFee, body, async (_req, res) => {
+    actions.push('post');
+    await res.json({ status: 'success', code: 'POSTED', data: { tweetId: 'kept' } });
+  });
+  assert.equal(first.res.statusCode, 503);
+  assert.equal(first.res.body.code, 'BUSINESS_RESULT_UNSTORED');
+  assert.equal(first.res.body.data.retryable, false);
+  const second = await call(handleUsageFee, body, async () => {
+    actions.push('post-again');
+  });
+  assert.equal(second.nextCalled, false);
+  assert.equal(second.res.body.code, 'BUSINESS_RESULT_UNSTORED');
+  assert.deepEqual(actions, ['post']);
+  assert.equal(chain.sent.length, 1);
+  assert.equal((await store.getOperation(first.req.makexOperation.id)).state, 'NEEDS_RECONCILIATION');
 });
