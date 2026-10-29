@@ -5,5 +5,12 @@
     "label": "Post ID",
     "required": true,
     "help": "The X post ID to remove from the connected account bookmarks."
+  },
+  {
+    "name": "idempotencyKey",
+    "type": "text",
+    "label": "Idempotency Key",
+    "required": false,
+    "help": "Leave empty to treat an identical retry as the same operation. Set a new value to repeat an identical operation on purpose."
   }
 ]

@@ -19,5 +19,12 @@
       "label": "Field"
     },
     "help": "Optional X API tweet.fields expansions (e.g. created_at, public_metrics, attachments)."
+  },
+  {
+    "name": "idempotencyKey",
+    "type": "text",
+    "label": "Idempotency Key",
+    "required": false,
+    "help": "Leave empty to treat an identical retry as the same operation. Set a new value to repeat an identical operation on purpose."
   }
 ]
